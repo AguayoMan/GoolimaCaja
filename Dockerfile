@@ -7,12 +7,15 @@ WORKDIR /app
 # Copia los archivos necesarios
 COPY . .
 
-# Instala las dependencias del sistema necesarias para mysqlclient
+# Instala las dependencias del sistema necesarias
 RUN apt-get update && \
-    apt-get install -y default-libmysqlclient-dev build-essential && \
+    apt-get install -y --no-install-recommends \
+    pkg-config \
+    default-libmysqlclient-dev \
+    build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Configura un entorno virtual e instala las dependencias de Python
+# Crea y activa un entorno virtual, luego instala las dependencias de Python
 RUN python -m venv /opt/venv && \
     . /opt/venv/bin/activate && \
     pip install --upgrade pip && \
