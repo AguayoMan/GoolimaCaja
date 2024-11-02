@@ -1,17 +1,26 @@
-# Usa una imagen base oficial de Python
-FROM python:3.9-slim
+# Usa una imagen base de Python
+FROM python:3.11-slim
 
-# Configura el directorio de trabajo dentro del contenedor
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia los archivos de la aplicación al contenedor
+# Copia los archivos necesarios
 COPY . .
 
-# Instala las dependencias de Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Instala las dependencias del sistema necesarias para mysqlclient
+RUN apt-get update && \
+    apt-get install -y default-libmysqlclient-dev build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-# Expone el puerto en el que la aplicación se ejecutará
-EXPOSE 8080
+# Configura un entorno virtual e instala las dependencias de Python
+RUN python -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Comando de inicio para ejecutar la aplicación
+# Define las variables de entorno para asegurar que usemos el entorno virtual
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Define el comando para iniciar la aplicación
 CMD ["python", "index.py"]
+
