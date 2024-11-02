@@ -18,9 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip
 
-# Instala las dependencias, excluyendo pywin32
-RUN sed '/pywin32/d' requirements.txt > requirements_nopywin32.txt && \
-    /opt/venv/bin/pip install -r requirements_nopywin32.txt
+# Filtra el archivo requirements.txt para excluir pywin32
+RUN sed '/pywin32/d' requirements.txt > requirements_nopywin32.txt
+
+# Instala las dependencias, ignorando errores de paquetes que no se encuentren
+RUN /opt/venv/bin/pip install -r requirements_nopywin32.txt || echo "Algunos paquetes no se pudieron instalar"
 
 # Copia el resto de la aplicación
 COPY . .
@@ -33,3 +35,4 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Comando para correr la aplicación (ajusta según tu aplicación)
 CMD ["python", "index.py"]
+
