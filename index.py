@@ -769,16 +769,11 @@ def Ordenes_Credito_Agregar_Admin():
     notaVenta = data.get('notaVenta', [])  # Obtener la nota de venta
     formaPago = data.get('formaPago', '')
     totalGeneral = float(data.get('totalGeneral', 0))
-    efectivoRecibido_str = data.get('efectivoRecibido', '0')
-    Cliente = data.get('Cliente', '')
-    TransferenciaTarjetaRecibido_str = data.get('TransferenciaTarjetaRecibido', '0')
-
-# Aseguramos que los valores de efectivoRecibido y TransferenciaTarjetaRecibido sean flotantes o 0 si están vacíos
     efectivoRecibido = float(data.get('efectivoRecibido', 0) or 0)
     TransferenciaTarjetaRecibido = float(data.get('TransferenciaTarjetaRecibido', 0) or 0)
-    
-   
-    # Obtener el ID del cliente recién
+    Cliente = data.get('Cliente', '')
+
+    # Obtener el ID del cliente
     cur = mysql.connection.cursor()
     cur.execute('SELECT ClienteId FROM clientes_cat WHERE NombreCliente = %s', (Cliente,))
     dataC = cur.fetchone()
@@ -794,71 +789,68 @@ def Ordenes_Credito_Agregar_Admin():
     # Verificar si se encontró una orden existente
     if dataO is not None:
         OrIdExistente = dataO[0]
-        print(OrIdExistente)
         try:
             cur = mysql.connection.cursor()
-            cur.execute('UPDATE ordenes_cat SET totalOrden= totalOrden + %s, Restante = Restante + %s WHERE OrdenId = %s', (totalGeneral, totalGeneral, OrIdExistente))
+            cur.execute('UPDATE ordenes_cat SET totalOrden = totalOrden + %s, Restante = Restante + %s WHERE OrdenId = %s', (totalGeneral, totalGeneral, OrIdExistente))
             mysql.connection.commit()
 
-            # Insertar en Ordenes_det
-            try:
-                for item in notaVenta:
-                    # Obtener ProductoId basado en el nombre del producto
-                    cur2 = mysql.connection.cursor()
-                    cur2.execute('SELECT ProductoId FROM productos_cat WHERE NombreProducto = %s', (item['producto'],))
-                    data = cur2.fetchone()
-                    ProductoId = data[0]
-                    cur2.close()
-                    try:
-                        curP = mysql.connection.cursor()
-                        curP.execute('UPDATE productos_cat SET CantidadStock= CantidadStock - %s  WHERE ProductoId = %s', (item['cantidad'], ProductoId))
-                        mysql.connection.commit()
-                    except Exception as e:
-                        print(f"Error al actualizar el stock del producto: {e}")
-                        flash('Hubo un error al actualizar el stock del producto', 'danger')    
+            # Insertar o actualizar detalles en Ordenes_det
+            for item in notaVenta:
+                # Obtener ProductoId basado en el nombre del producto
+                cur2 = mysql.connection.cursor()
+                cur2.execute('SELECT ProductoId FROM productos_cat WHERE NombreProducto = %s', (item['producto'],))
+                data = cur2.fetchone()
+                ProductoId = data[0]
+                cur2.close()
 
-                    # Insertar detalles de la orden
+                # Actualizar el stock en productos_cat
+                curP = mysql.connection.cursor()
+                curP.execute('UPDATE productos_cat SET CantidadStock = CantidadStock - %s WHERE ProductoId = %s', (item['cantidad'], ProductoId))
+                mysql.connection.commit()
+                curP.close()
+
+                # Verificar si el producto ya está en ordenes_det para esa orden
+                cur = mysql.connection.cursor()
+                cur.execute('SELECT cantidad, precio, TotalFinal FROM ordenes_det WHERE OrdenId = %s AND ProductoId = %s', (OrIdExistente, ProductoId))
+                detalle_existente = cur.fetchone()
+
+                if detalle_existente:
+                    # Si el producto ya está en la orden, actualizar cantidad y total
+                    nueva_cantidad = detalle_existente[0] + item['cantidad']
+                    nuevo_total = detalle_existente[2] + item['total']
+                    cur.execute('''
+                        UPDATE ordenes_det
+                        SET cantidad = %s, precio = %s, TotalFinal = %s
+                        WHERE OrdenId = %s AND ProductoId = %s
+                    ''', (nueva_cantidad, item['precio'], nuevo_total, OrIdExistente, ProductoId))
+                else:
+                    # Insertar como nuevo detalle de producto si no existe en la orden
                     sql = '''
                         INSERT INTO ordenes_det (OrdenId, ProductoId, cantidad, precio, TotalFinal)
                         VALUES (%s, %s, %s, %s, %s)
                     '''
                     valores = (OrIdExistente, ProductoId, item['cantidad'], item['precio'], item['total'])
-                    cur = mysql.connection.cursor()
                     cur.execute(sql, valores)
-                    mysql.connection.commit()
-                    cur.close()
 
-                return redirect(url_for('Venta'))
+                mysql.connection.commit()
+                cur.close()
 
-            except Exception as e:
-                print(f"Error al insertar detalles de la orden: {e}")
-                flash('Hubo un error al agregar los detalles de la orden', 'danger')
+            return redirect(url_for('Venta'))
 
         except Exception as e:
             print(f"Error al actualizar la orden existente: {e}")
             flash('Hubo un error al actualizar la orden existente', 'danger')
 
     else:
-        # Verificar si la cadena está vacía o no es numérica antes de convertirla
-        if efectivoRecibido_str and efectivoRecibido_str.strip().replace('.', '', 1).isdigit():
-            efectivoRecibido = float(efectivoRecibido_str)
-        else:
-            efectivoRecibido = 0.0
-
-        # Verificar si la cadena está vacía o no es numérica antes de convertirla
-        if TransferenciaTarjetaRecibido_str and TransferenciaTarjetaRecibido_str.strip().replace('.', '', 1).isdigit():
-            TransferenciaTarjetaRecibido = float(TransferenciaTarjetaRecibido_str)
-        else:
-            TransferenciaTarjetaRecibido = 0.0        
-    
+        # Crear una nueva orden si no existe
         try:
             # Insertar en Ordenes_cat
             cur = mysql.connection.cursor()
             query = '''
-                INSERT INTO ordenes_cat (UsuarioId, ClienteId, CreditoRapida, StatusPagada, totalOrden, Entregado,EntregadoTransferenciaTarjeta, Restante, Eliminado)
-                VALUES (%s,%s, "Credito", 0, %s, %s,%s, %s, 0);
+                INSERT INTO ordenes_cat (UsuarioId, ClienteId, CreditoRapida, StatusPagada, totalOrden, Entregado, EntregadoTransferenciaTarjeta, Restante, Eliminado)
+                VALUES (%s, %s, "Credito", 0, %s, %s, %s, %s, 0);
             '''
-            cur.execute(query, (user_id, ClienteId, totalGeneral, efectivoRecibido,TransferenciaTarjetaRecibido, totalGeneral))
+            cur.execute(query, (user_id, ClienteId, totalGeneral, efectivoRecibido, TransferenciaTarjetaRecibido, totalGeneral))
             mysql.connection.commit()
 
             # Obtener el ID de la orden recién insertada
@@ -867,46 +859,39 @@ def Ordenes_Credito_Agregar_Admin():
             ordenId = data[0]
             cur.close()
 
-            # Insertar en Ordenes_det
-            try:
-                for item in notaVenta:
-                    # Obtener ProductoId basado en el nombre del producto
-                    cur2 = mysql.connection.cursor()
-                    cur2.execute('SELECT ProductoId FROM productos_cat WHERE NombreProducto = %s', (item['producto'],))
-                    data = cur2.fetchone()
-                    ProductoId = data[0]
-                    cur2.close()                   
-                    try:
-                        curP = mysql.connection.cursor()
-                        curP.execute('UPDATE productos_cat SET CantidadStock= CantidadStock - %s  WHERE ProductoId = %s', (item['cantidad'], ProductoId))
-                        mysql.connection.commit()
-                    except Exception as e:
-                        print(f"Error al actualizar el stock del producto: {e}")
-                        flash('Hubo un error al actualizar el stock del producto', 'danger')    
-                        
-                    # Insertar detalles de la orden
-                    sql = '''
-                        INSERT INTO ordenes_det (OrdenId, ProductoId, cantidad, precio, TotalFinal)
-                        VALUES (%s, %s, %s, %s, %s)
-                    '''
-                    valores = (ordenId, ProductoId, item['cantidad'], item['precio'], item['total'])
-                    cur = mysql.connection.cursor()
-                    cur.execute(sql, valores)
-                    mysql.connection.commit()
-                    cur.close()
+            # Insertar detalles de la orden en ordenes_det
+            for item in notaVenta:
+                # Obtener ProductoId basado en el nombre del producto
+                cur2 = mysql.connection.cursor()
+                cur2.execute('SELECT ProductoId FROM productos_cat WHERE NombreProducto = %s', (item['producto'],))
+                data = cur2.fetchone()
+                ProductoId = data[0]
+                cur2.close()
 
-                return redirect(url_for('Venta'))
+                # Actualizar el stock en productos_cat
+                curP = mysql.connection.cursor()
+                curP.execute('UPDATE productos_cat SET CantidadStock = CantidadStock - %s WHERE ProductoId = %s', (item['cantidad'], ProductoId))
+                mysql.connection.commit()
+                curP.close()
 
-            except Exception as e:
-                print(f"Error al insertar detalles de la orden: {e}")
-                flash('Hubo un error al agregar los detalles de la orden', 'danger')
+                # Insertar detalles de la orden
+                sql = '''
+                    INSERT INTO ordenes_det (OrdenId, ProductoId, cantidad, precio, TotalFinal)
+                    VALUES (%s, %s, %s, %s, %s)
+                '''
+                valores = (ordenId, ProductoId, item['cantidad'], item['precio'], item['total'])
+                cur = mysql.connection.cursor()
+                cur.execute(sql, valores)
+                mysql.connection.commit()
+                cur.close()
+
+            return redirect(url_for('Venta'))
 
         except Exception as e:
             print(f"Error al agregar la orden: {e}")
             flash('Hubo un error al agregar la orden', 'danger')
         
-    return redirect(url_for('Venta'))
-   
+    return redirect(url_for('Venta'))   
 
 @app.route('/verificar_contraseña', methods=['POST'])
 def verificar_contraseña():
