@@ -320,42 +320,36 @@
 
 
 // Agregar artículo a la tabla de Nota de Venta
-function addItem() {
+    function addItem() {
     var productoInput = document.getElementById('producto-input');
     var abreviaturaInput = document.getElementById('abreviatura-input');
     var cantidadInput = document.getElementById('cantidad-input');
     var precioInput = parseFloat(document.getElementById('precio-input').value); // Obtener el valor del precio como número
 
-    // Validar que todos los campos estén llenos
     if (!productoInput.value || !abreviaturaInput.value || !cantidadInput.value || isNaN(precioInput)) {
         alert("Por favor complete todos los campos.");
         return;
     }
 
-    // Aplicar descuento si corresponde
     var selectCliente = document.getElementById('Cliente').selectedOptions[0];
-    var clienteDescuento = parseFloat(selectCliente.getAttribute('clienteDescuento')) / 100; // Convertir a decimal
-
+    var clienteDescuento = parseFloat(selectCliente.getAttribute('clienteDescuento')) / 100;
     var selectProducto = document.getElementById('producto-input').selectedOptions[0];
-    var disponibleParaDescuento = parseInt(selectProducto.getAttribute('data-disponible')); // Verificar si está disponible para descuento
+    var disponibleParaDescuento = parseInt(selectProducto.getAttribute('data-disponible'));
 
-    // Si el producto es elegible para descuento y el cliente tiene descuento
     if (selectCliente.value && disponibleParaDescuento === 1) {
-        precioInput = precioInput - (precioInput * clienteDescuento); // Aplicar el descuento
+        precioInput = precioInput - (precioInput * clienteDescuento);
     }
 
     var tabla = document.getElementById('nota-venta-body');
     var filas = tabla.getElementsByTagName('tr');
     var existe = false;
 
-    // Verificar si el producto ya existe en la tabla
     for (var i = 0; i < filas.length; i++) {
         var fila = filas[i];
         var productoExistente = fila.cells[0].textContent;
         var abreviaturaExistente = fila.cells[1].textContent;
 
         if (productoExistente === productoInput.value && abreviaturaExistente === abreviaturaInput.value) {
-            // Si el producto ya existe, actualizar cantidad y total
             var cantidadExistente = parseInt(fila.cells[2].textContent);
             var nuevaCantidad = cantidadExistente + parseInt(cantidadInput.value);
             fila.cells[2].textContent = nuevaCantidad;
@@ -363,77 +357,70 @@ function addItem() {
             var nuevoTotal = precioInput * nuevaCantidad;
             fila.cells[4].textContent = nuevoTotal.toFixed(2);
 
+            // Actualizar en `notaVenta`
+            for (var j = 0; j < notaVenta.length; j++) {
+                if (notaVenta[j].producto === productoInput.value && notaVenta[j].abreviatura === abreviaturaInput.value) {
+                    notaVenta[j].cantidad = nuevaCantidad;
+                    notaVenta[j].total = nuevoTotal;
+                    break;
+                }
+            }
+
             existe = true;
             break;
         }
     }
 
     if (!existe) {
-        // Si el producto no existe, agregar una nueva fila
         var nuevaFila = tabla.insertRow();
         nuevaFila.insertCell(0).textContent = productoInput.value;
         nuevaFila.insertCell(1).textContent = abreviaturaInput.value;
         nuevaFila.insertCell(2).textContent = cantidadInput.value;
-        nuevaFila.insertCell(3).textContent = precioInput.toFixed(2); // Mostrar el precio con descuento aplicado si corresponde
+        nuevaFila.insertCell(3).textContent = precioInput.toFixed(2);
         var total = precioInput * parseInt(cantidadInput.value);
         nuevaFila.insertCell(4).textContent = total.toFixed(2);
 
-        // Crear una celda para el botón de acción
         var celdaAcciones = nuevaFila.insertCell(5);
-
-        // Crear el botón de borrar
         var botonBorrar = document.createElement('button');
         botonBorrar.textContent = 'Borrar';
         botonBorrar.className = 'btn btn-danger btn-custom';
         botonBorrar.onclick = function() {
-        // Solicita la contraseña o código al usuario
-        let codigoIngresado = prompt ("Ingrese la contraseña del Administrador/Supervisor:");
-        
-        // Verificar la contraseña ingresada
-        if (codigoIngresado) {
-            fetch('/verificar_contraseña', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ codigo: codigoIngresado })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Contraseña incorrecta o usuario no autorizado');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.valid) {
-                    // Si la contraseña es válida, eliminar la fila
-                    deleteRow(this, productoInput.value, abreviaturaInput.value);
-                } else {
-                    alert("Contraseña incorrecta o usuario no autorizado");
-                }
-            })
-            .catch(error => {
-                alert(error.message);
-            });
-        }
-    };
-
-        // Añadir el botón a la celda
+            let codigoIngresado = prompt("Ingrese la contraseña del Administrador/Supervisor:");
+            if (codigoIngresado) {
+                fetch('/verificar_contraseña', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ codigo: codigoIngresado })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Contraseña incorrecta o usuario no autorizado');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.valid) {
+                        deleteRow(this, productoInput.value, abreviaturaInput.value);
+                    } else {
+                        alert("Contraseña incorrecta o usuario no autorizado");
+                    }
+                })
+                .catch(error => alert(error.message));
+            }
+        };
         celdaAcciones.appendChild(botonBorrar);
+
+        var producto = productoInput.value;
+        var abreviatura = abreviaturaInput.value;
+        var cantidad = parseInt(cantidadInput.value);
+        var total = precioInput * cantidad;
+
+        notaVenta.push({ producto, abreviatura, cantidad, precio: precioInput, total });
     }
 
-    // Añadir el artículo a la variable notaVenta
-    var producto = productoInput.value;
-    var abreviatura = abreviaturaInput.value;
-    var cantidad = parseInt(cantidadInput.value);
-    var total = precioInput * cantidad; // Total con descuento aplicado
-
-    notaVenta.push({ producto, abreviatura, cantidad, precio: precioInput, total });
-
-    calcularTotalGeneral(); // Calcular el nuevo total general
-    resetForm(); // Limpiar el formulario
+    calcularTotalGeneral();
+    resetForm();
 }
-
 
     // Función para eliminar una fila
 function deleteRow(button) {
