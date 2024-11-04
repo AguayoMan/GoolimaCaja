@@ -93,7 +93,7 @@ def OrdenesAdmin():
         FROM ordenes_cat AS O 
         INNER JOIN ordenes_det AS OD ON O.OrdenId = OD.OrdenId 
         INNER JOIN productos_cat AS P ON P.ProductoId = OD.ProductoId 
-        WHERE O.StatusPagada = 0 
+        WHERE O.StatusPagada = 0 and O.ClienteId IS NULL
         ORDER BY O.OrdenId,P.NombreProducto;
     ''')
     data = cur.fetchall()
@@ -1019,7 +1019,7 @@ def obtener_detalles_orden(orden_id):
     print(orden_id)
     cur = mysql.connection.cursor()
     query = """
-    SELECT P.NombreProducto, COALESCE(OD.Precio, 0), OD.Cantidad, COALESCE(OD.TotalFinal, 0), O.totalOrden,C.NombreCliente
+    SELECT P.NombreProducto, COALESCE(OD.Precio, 0), OD.Cantidad, COALESCE(OD.TotalFinal, 0), O.totalOrden, C.NombreCliente
     FROM ordenes_cat AS O 
     INNER JOIN ordenes_det AS OD ON O.OrdenId = OD.OrdenId
     INNER JOIN clientes_cat AS C ON O.ClienteId = C.ClienteId 
@@ -1030,20 +1030,53 @@ def obtener_detalles_orden(orden_id):
 
     cur.execute(query, (orden_id,))
     detalles = cur.fetchall()
-    print (detalles)
-    # Obtener el total de la orden, asegurando que siempre sea un número
+    print(detalles)
+    
+    # Inicializamos `total_orden` y `cliente` con valores predeterminados
+    total_orden = 0
+    cliente = ""  # O usa "" si prefieres una cadena vacía en lugar de None
+
+    # Si hay detalles, extraemos el total y el cliente de la primera fila
     if detalles:
-        total_orden = detalles[0][4]  # El campo totalOrden de la primera fila
-        cliente = detalles[0][5]  # El campo Cliente de la primera fila
+        total_orden = detalles[0][4] if detalles[0][4] is not None else 0
+        cliente = detalles[0][5]
 
-        if total_orden is None:
-            total_orden = 0  # Si totalOrden es None, asignamos 0
-    else:
-        total_orden = 0  # Si no hay detalles, total_orden es 0
-
+    # Creamos la lista de productos con los detalles de cada uno
     productos = [{'nombre': row[0], 'precio': float(row[1]), 'cantidad': row[2], 'total_final': float(row[3])} for row in detalles]
 
-    return jsonify({'productos': productos, 'totalOrden': float(total_orden),'cliente': cliente})  # Aseguramos que totalOrden sea un flotante
+    # Retornamos los productos, totalOrden y cliente
+    return jsonify({'productos': productos, 'totalOrden': float(total_orden), 'cliente': cliente})
+
+@app.route('/obtenerDetallesOrdenRapidas/<int:orden_id>', methods=['GET'])
+def obtener_detalles_orden_Rapidas(orden_id):
+    print(orden_id)
+    cur = mysql.connection.cursor()
+    query = """
+    SELECT P.NombreProducto, COALESCE(OD.Precio, 0), OD.Cantidad, COALESCE(OD.TotalFinal, 0), O.totalOrden
+    FROM ordenes_cat AS O 
+    INNER JOIN ordenes_det AS OD ON O.OrdenId = OD.OrdenId
+    INNER JOIN productos_cat AS P ON P.ProductoId = OD.ProductoId 
+    WHERE O.OrdenId = %s 
+    ORDER BY O.OrdenId;
+    """
+
+    cur.execute(query, (orden_id,))
+    detalles = cur.fetchall()
+    print(detalles)
+    
+    # Inicializamos `total_orden` y `cliente` con valores predeterminados
+    total_orden = 0
+    cliente = ""  # O usa "" si prefieres una cadena vacía en lugar de None
+
+    # Si hay detalles, extraemos el total y el cliente de la primera fila
+    if detalles:
+        total_orden = detalles[0][4] if detalles[0][4] is not None else 0
+
+    # Creamos la lista de productos con los detalles de cada uno
+    productos = [{'nombre': row[0], 'precio': float(row[1]), 'cantidad': row[2], 'total_final': float(row[3])} for row in detalles]
+
+    # Retornamos los productos, totalOrden y cliente
+    return jsonify({'productos': productos, 'totalOrden': float(total_orden), 'cliente': cliente})
 
 
 @app.route('/obtenerDetallesDeuda/<int:orden_id>', methods=['GET'])
