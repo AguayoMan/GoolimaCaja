@@ -377,7 +377,7 @@ function enviarNotaVenta() {
     .then(data => {
         if (data.success) {
             // Obtener los detalles de la orden para el ticket
-            fetch(`/obtenerDetallesOrden/${ordenId}`)
+            fetch(`/obtenerDetallesOrdenRapidas/${ordenId}`)
             .then(response => response.json())
             .then(ordenDetalles => {
                 if (ordenDetalles) {
