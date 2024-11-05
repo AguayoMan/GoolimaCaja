@@ -467,7 +467,12 @@ function deleteRow(button) {
         document.getElementById('cantidad-input').value = 1;
         document.getElementById('precio-input').value = '';
     }
-
+    
+document.addEventListener('DOMContentLoaded', () => {
+    // Establecer "Efectivo" como opción seleccionada por defecto y mostrar los campos
+    document.getElementById('formaPago').value = "Efectivo";
+    mostrarCamposDePago(); // Llama a la función para mostrar los campos de efectivo al cargar la página
+});
     function mostrarCamposDePago() {
         var formaPago = document.getElementById('formaPago').value;
         var campoEfectivo = document.getElementById('campo-efectivo');
