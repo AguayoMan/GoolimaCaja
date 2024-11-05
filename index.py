@@ -1165,19 +1165,9 @@ def Ingresos():
     if fechainicio > fechafinal:
         fechainicio, fechafinal = fechafinal, fechainicio
 
-    # Ajustar fechainicio y fechafinal para reflejar el horario de caja
+    # Ajuste de horario de caja
     fechainicio = f"{fechainicio} 07:00:00"
-    fechafinal = f"{fechafinal} 04:00:00"  # Añadir el tiempo a fechafinal
-    
-    try:
-        # Convertir fechafinal a datetime y añadir un día
-        fechafinal_dt = datetime.strptime(fechafinal, "%Y-%m-%d %H:%M:%S") + timedelta(days=1)
-    except ValueError as e:
-        print(f"Error al convertir fechafinal: {e}")
-        return "Error en el formato de fecha", 400
-
-    # Formatear fechafinal de nuevo a string
-    fechafinal = fechafinal_dt.strftime("%Y-%m-%d %H:%M:%S")
+    fechafinal = f"{fechafinal} 04:00:00"
 
     # Consultas de ingreso total considerando el intervalo de fechas completo
     entregado_query = '''
@@ -1185,11 +1175,11 @@ def Ingresos():
             (SELECT COALESCE(SUM(Entregado), 0) 
              FROM ordenes_cat 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND %s) +
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) +
             (SELECT COALESCE(SUM(Entregado), 0) 
              FROM clientes_credito_det 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND %s) 
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) 
             AS TotalEntregado
     '''
     transfer_query = '''
@@ -1197,11 +1187,11 @@ def Ingresos():
             (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) 
              FROM ordenes_cat 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND %s) +
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) +
             (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) 
              FROM clientes_credito_det 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND %s) 
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) 
             AS TotalTransfer
     '''
 
@@ -1220,7 +1210,7 @@ def Ingresos():
                            total_entregado=total_entregado, 
                            total_transfer=total_transfer,
                            fecha_inicio=fechainicio.split()[0],
-                           fecha_final=fechafinal_dt.strftime("%Y-%m-%d"))
+                           fecha_final=fechafinal.split()[0])
 
 
 
