@@ -125,6 +125,11 @@
                        onchange="document.getElementById('HiddenDisponibleParaDescuento').value = this.checked ? 1 : 0">
                 <input type="hidden" id="HiddenDisponibleParaDescuento" name="DisponibleParaDescuento" value="0"> <!-- Campo oculto -->
             </div>
+             <h2></h2>
+            <div class="form-group">
+                <label for="Precio">Precio Para Descuento</label>
+                <input type="number" step="0.01" class="form-control" id="PrecioDesc" name="PrecioDesc" placeholder="ejemplo: 550">
+            </div>
             <div class="form-group">
                 <label for="CantidadStock">Cantidad (Stock)</label>
                 <input type="number" class="form-control" name="CantidadStock" placeholder="Cantidad (Stock)" value="{{ data[0][4] }}" required min="1">
