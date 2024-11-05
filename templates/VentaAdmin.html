@@ -297,6 +297,7 @@
                 event.preventDefault(); // Evitar que el formulario se envíe automáticamente
                 document.getElementById('total-a-pagar').textContent = document.getElementById('total-general').textContent; // Actualizar el total en el modal
                 document.getElementById('efectivoRecibido').value = document.getElementById('total-a-pagar').textContent;
+                console.log(document.getElementById('efectivoRecibido').value)
                 var modal = new bootstrap.Modal(document.getElementById('modalCobro'));
                 modal.show();
             }
