@@ -469,7 +469,7 @@ def ClientesAgregarAdmin():
 def Clientes_Agregar_Admin():
     NombreCliente = request.form['NombreCliente']
     Telefono = request.form['Telefono']
-    Descuento = request.form['Descuento']
+    Descuento = request.form['DisponibleParaDescuento']
 
     try:
         cur = mysql.connection.cursor()
