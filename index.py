@@ -1155,9 +1155,6 @@ def Ingresos_Admin():
     return render_template('IngresosAdmin.html')
 
 
-
-from datetime import datetime, timedelta
-
 @app.route('/Ingresos', methods=['POST'])
 def Ingresos():
     cur = mysql.connection.cursor()
