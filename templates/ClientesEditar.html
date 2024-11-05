@@ -111,7 +111,7 @@
 
     <h1>Agregar Clientes</h1>
 
-    <div class="container"><form action="/updateC/{{ data[0][0] }}" method="post">
+    <div class="container"><form id="clienteForm" action="/updateC/{{ data[0][0] }}" method="post">
         <div class="form-group">
             <label for="exampleCliente">Nombre Cliente</label>
             <input type="text" class="form-control" id="ClienteNombre" name="NombreCliente" aria-describedby="emailHelp" placeholder="ejemplo: Juan, Juan Perez" value="{{ data[0][1] }}" required>
@@ -121,8 +121,9 @@
             <input type="text" class="form-control" id="Telefono" name="Telefono" aria-describedby="emailHelp" placeholder="ejemplo: 3410556556" value="{{ data[0][2] }}" required>
         </div>
         <div class="form-group">
-            <label for="exampleCliente">Descuento</label>
-            <td><input type="number" class="form-control" name="Descuento" placeholder="Cantidad" value="{{ data[0][3] }}" required min="0"></td>
+            <label for="DisponibleParaDescuento">Elegible para descuento</label>
+            <input type="checkbox" id="DisponibleParaDescuento" value="1">
+            <input type="hidden" id="HiddenDisponibleParaDescuento" name="DisponibleParaDescuento" value="0"> <!-- Campo oculto -->
         </div>
 
         <button type="submit" class="btn btn-primary">Agregar</button>
@@ -147,4 +148,14 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js" integrity="sha384-+sLIOodYLS7CIrQpBjl+C7nPvqq+FbNUBDunl/OZv93DB7Ln/533i8e/mZXLi/P+" crossorigin="anonymous"></script>
 </body>
+    
+<script>
+    document.getElementById('clienteForm').addEventListener('submit', function () { 
+        const descuentoCheckbox = document.getElementById('DisponibleParaDescuento');
+        const hiddenInput = document.getElementById('HiddenDisponibleParaDescuento');
+        
+        // Sincronizar el valor del campo oculto con el estado del checkbox
+        hiddenInput.value = descuentoCheckbox.checked ? '1' : '0';
+    });
+</script>
 </html>
