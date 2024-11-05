@@ -126,9 +126,11 @@
                 <td>ProductoId</td>
                 <td>Nombre Producto</td>
                 <td>Abreviatura</td>
-                <td>Precio</td>
+                <td>Precio Venta</td>
+                <td>Precio Compra</td>
                 <td>Cantidad Stock</td>
                 <td>Disponible para descuento</td>
+                <td>Precio Con Descuento</td>
                 <td>FechaHoraRegistro</td>
                 <td>FechaHoraActualizado</td>
             </tr>
@@ -141,9 +143,11 @@
               <td>{{data.2}}</td>
               <td>{{data.3}}</td>
               <td>{{data.4}}</td>
-              <td>{% if data[5] == 1 %}Si{% else %}No{% endif %}</td> 
-              <td>{{data.7}}</td>
+              <td>{{data.5}}</td>
+              <td>{% if data[6] == 1 %}Si{% else %}No{% endif %}</td> 
+              <td>{{data.10}}</td>
               <td>{{data.8}}</td>
+              <td>{{data.9}}</td>
               <td> 
                 <button type="button" class="btn btn-primary" onclick="window.location.href='/deleteP/{{data.0}}'">Borrar</button>
               </td>
