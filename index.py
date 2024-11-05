@@ -299,10 +299,11 @@ def updateP_data(id):
     Precio = request.form['Precio']
     Abreviatura = request.form['Abreviatura']
     CantidadStock = request.form['CantidadStock']
+    PrecioDesc = request.form['PrecioDesc']
     DisponibleParaDescuento = request.form['DisponibleParaDescuento']
     cur = mysql.connection.cursor()
     try:
-        cur.execute('UPDATE productos_cat SET NombreProducto = %s, Precio = %s, Abreviatura = %s, CantidadStock = %s, DisponibleParaDescuento = %s WHERE ProductoId = %s', (NombreProducto,Precio, Abreviatura, CantidadStock,DisponibleParaDescuento, id))
+        cur.execute('UPDATE productos_cat SET NombreProducto = %s, Precio = %s, Abreviatura = %s, CantidadStock = %s, DisponibleParaDescuento = %s, PrecioDesc=%s WHERE ProductoId = %s', (NombreProducto,Precio, Abreviatura, CantidadStock,DisponibleParaDescuento,PrecioDesc, id))
         mysql.connection.commit()
         flash('Producto actualizado correctamente', 'success')
     except Exception as e:
