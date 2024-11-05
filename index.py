@@ -516,7 +516,7 @@ def BuscarEditarCliente_data(id):
 def updateC_data(id):
     NombreCliente = request.form['NombreCliente']
     Telefono = request.form['Telefono']
-    Descuento = request.form['Descuento']
+    Descuento = request.form['DisponibleParaDescuento']
     cur = mysql.connection.cursor()
     try:
         cur.execute('UPDATE clientes_cat SET NombreCliente= %s, Telefono = %s, Descuento = %s WHERE ClienteId = %s', (NombreCliente,Telefono,Descuento, id))
