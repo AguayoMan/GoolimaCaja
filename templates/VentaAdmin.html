@@ -549,8 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (totalRecibido >= totalGeneral) {
                 const cambio = totalRecibido - totalGeneral;
                 // Mostramos el prompt para preguntar si se desea imprimir el ticket
-                if (confirm('¿Desea imprimir el ticket?')) {
-                    // Llamamos a la función para imprimir el ticket
+                if (!confirm('¿No desea imprimir el ticket?')) {
+                    // Llamamos a la función para imprimir el ticket si el usuario selecciona "Cancelar"
                     imprimirTicket(notaVenta, totalGeneral, efectivoRecibido, TransferenciaTarjetaRecibido, cambio);
                 }
             }
