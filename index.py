@@ -1118,16 +1118,18 @@ def actualizar_credito():
         # Consultar la deuda actual del cliente
         cur.execute('SELECT StatusPagada FROM clientes_credito_det WHERE ClienteId = %s ORDER BY FechaHoraRegistro DESC LIMIT 1', (cliente_id,))
         deuda = cur.fetchone()
-        print(deuda[0])
-        if deuda[0]==0:
+        print(deuda)
+
+        # Verificar si existe un registro de deuda
+        if deuda is not None and deuda[0] == 0:
             print("si")
             # Actualizar la deuda si ya existe un registro
             cur.execute('UPDATE clientes_credito_det SET Deuda = Deuda + %s WHERE ClienteId = %s', (restante, cliente_id))
             cur.execute('UPDATE ordenes_cat SET StatusPagada = 1 WHERE OrdenId = %s', (orden_id,))
         else:
-            # Insertar un nuevo registro si no existe deuda previa
             print("no")
-            cur.execute('INSERT INTO clientes_credito_det (ClienteId, Deuda,Entregado,EntregadoTransferenciaTarjeta,StatusPagada) VALUES (%s, %s,0,0,0)', (cliente_id, restante))
+            # Insertar un nuevo registro si no existe deuda previa
+            cur.execute('INSERT INTO clientes_credito_det (ClienteId, Deuda, Entregado, EntregadoTransferenciaTarjeta, StatusPagada) VALUES (%s, %s, 0, 0, 0)', (cliente_id, restante))
             cur.execute('UPDATE ordenes_cat SET StatusPagada = 1 WHERE OrdenId = %s', (orden_id,))
 
         
