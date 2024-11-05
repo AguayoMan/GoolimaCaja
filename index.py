@@ -1150,29 +1150,49 @@ def Ingresos_Admin():
 
 
 
+@app.route('/IngresosAdmin')
+def Ingresos_Admin():
+    return render_template('IngresosAdmin.html')
+
+
+
+from datetime import datetime, timedelta
+
 @app.route('/Ingresos', methods=['POST'])
 def Ingresos():
     cur = mysql.connection.cursor()
     fechainicio = request.form.get('FechaInicio')
     fechafinal = request.form.get('FechaFinal')
 
+    # Asegurar que fechainicio <= fechafinal
     if fechainicio > fechafinal:
         fechainicio, fechafinal = fechafinal, fechainicio
 
-    # Ajuste de horario de caja: apertura a las 7:00 a. m. y cierre a las 4:00 a. m.
+    # Ajustar fechainicio y fechafinal para reflejar el horario de caja
     fechainicio = f"{fechainicio} 07:00:00"
-    fechafinal = f"{fechafinal} 04:00:00"
+    fechafinal = f"{fechafinal} 04:00:00"  # Añadir el tiempo a fechafinal
+    
+    try:
+        # Convertir fechafinal a datetime y añadir un día
+        fechafinal_dt = datetime.strptime(fechafinal, "%Y-%m-%d %H:%M:%S") + timedelta(days=1)
+    except ValueError as e:
+        print(f"Error al convertir fechafinal: {e}")
+        return "Error en el formato de fecha", 400
 
+    # Formatear fechafinal de nuevo a string
+    fechafinal = fechafinal_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Consultas de ingreso total considerando el intervalo de fechas completo
     entregado_query = '''
         SELECT 
             (SELECT COALESCE(SUM(Entregado), 0) 
              FROM ordenes_cat 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) +
+             AND FechaHoraRegistro BETWEEN %s AND %s) +
             (SELECT COALESCE(SUM(Entregado), 0) 
              FROM clientes_credito_det 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) 
+             AND FechaHoraRegistro BETWEEN %s AND %s) 
             AS TotalEntregado
     '''
     transfer_query = '''
@@ -1180,21 +1200,21 @@ def Ingresos():
             (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) 
              FROM ordenes_cat 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) +
+             AND FechaHoraRegistro BETWEEN %s AND %s) +
             (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) 
              FROM clientes_credito_det 
              WHERE StatusPagada = 1 
-             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) 
+             AND FechaHoraRegistro BETWEEN %s AND %s) 
             AS TotalTransfer
     '''
 
     # Ejecutar la consulta para la suma de Entregado
-    cur.execute(entregado_query, (fechainicio, fechainicio, fechainicio, fechainicio))
+    cur.execute(entregado_query, (fechainicio, fechafinal, fechainicio, fechafinal))
     result_entregado = cur.fetchone()
     total_entregado = result_entregado[0] if result_entregado else 0.0
 
     # Ejecutar la consulta para la suma de EntregadoTransferenciaTarjeta
-    cur.execute(transfer_query, (fechainicio, fechainicio, fechainicio, fechainicio))
+    cur.execute(transfer_query, (fechainicio, fechafinal, fechainicio, fechafinal))
     result_transfer = cur.fetchone()
     total_transfer = result_transfer[0] if result_transfer else 0.0
 
@@ -1203,8 +1223,7 @@ def Ingresos():
                            total_entregado=total_entregado, 
                            total_transfer=total_transfer,
                            fecha_inicio=fechainicio.split()[0],
-                           fecha_final=fechafinal.split()[0])
-
+                           fecha_final=fechafinal_dt.strftime("%Y-%m-%d"))
 
 
 
