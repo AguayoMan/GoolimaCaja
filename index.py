@@ -235,6 +235,7 @@ def ProductosAgregarAdmin():
 def Productos_Agregar_Admin():
     NombreProducto = request.form['NombreProducto']
     Precio = request.form['Precio']
+    PrecioDesc = request.form['PrecioDesc']
     Venta = request.form['CostoVenta']
     Abreviatura = request.form['Abreviatura']
     CantidadStock = request.form['CantidadStock']
@@ -246,10 +247,10 @@ def Productos_Agregar_Admin():
         cur = mysql.connection.cursor()
         query = '''
             INSERT INTO productos_cat 
-            (NombreProducto, Abreviatura, Precio, PrecioCompra, CantidadStock, DisponibleParaDescuento, Eliminado)
-            VALUES (%s, %s, %s, %s, %s, %s, 0);
+            (NombreProducto, Abreviatura, Precio, PrecioCompra, CantidadStock, DisponibleParaDescuento, Eliminado,PrecioDesc)
+            VALUES (%s, %s, %s, %s, %s, %s, 0,%s);
         '''
-        cur.execute(query, (NombreProducto, Abreviatura, Precio, Venta, CantidadStock, DisponibleParaDescuento))
+        cur.execute(query, (NombreProducto, Abreviatura, Precio, Venta, CantidadStock, DisponibleParaDescuento,PrecioDesc))
         mysql.connection.commit()
         cur.close()
         
