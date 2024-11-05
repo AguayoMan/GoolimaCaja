@@ -121,10 +121,12 @@
             <input type="text" class="form-control" id="Telefono" name="Telefono" aria-describedby="emailHelp" placeholder="ejemplo: 3410556556" value="{{ data[0][2] }}" required>
         </div>
         <div class="form-group">
-            <label for="DisponibleParaDescuento">Elegible para descuento</label>
-            <input type="checkbox" id="DisponibleParaDescuento" value="1">
-            <input type="hidden" id="HiddenDisponibleParaDescuento" name="DisponibleParaDescuento" value="0"> <!-- Campo oculto -->
-        </div>
+            <label for="exampleCliente">Descuento</label> 
+            <input type="checkbox" id="DisponibleParaDescuento" 
+                {% if data[0][3] == 1 %} checked {% endif %} 
+                onchange="document.getElementById('HiddenDisponibleParaDescuento').value = this.checked ? 1 : 0">
+            <input type="hidden" id="HiddenDisponibleParaDescuento" name="DisponibleParaDescuento" value="0">
+        </div>   
 
         <button type="submit" class="btn btn-primary">Agregar</button>
     </form>
