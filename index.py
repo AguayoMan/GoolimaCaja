@@ -1150,11 +1150,6 @@ def Ingresos_Admin():
 
 
 
-@app.route('/IngresosAdmin')
-def Ingresos_Admin():
-    return render_template('IngresosAdmin.html')
-
-
 @app.route('/Ingresos', methods=['POST'])
 def Ingresos():
     cur = mysql.connection.cursor()
