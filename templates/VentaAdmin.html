@@ -145,7 +145,7 @@
                             <select class="form-select" id="producto-input" onchange="syncAbreviatura()" required>
                                 <option disabled selected value="">Producto</option>
                                 {% for Producto in producto %}
-                                    <option value="{{ Producto[0] }}" data-abreviatura="{{ Producto[1] }}" data-precio="{{ Producto[2] }}" data-disponible="{{ Producto[3] }}">{{ Producto[0] }}</option>
+                                    <option value="{{ Producto[0] }}" data-abreviatura="{{ Producto[1] }}" data-precio="{{ Producto[2] }}" data-precio-desc="{{ Producto[4] }}" data-disponible="{{ Producto[3] }}">{{ Producto[0] }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -334,12 +334,15 @@
     }
 
     var selectCliente = document.getElementById('Cliente').selectedOptions[0];
-    var clienteDescuento = parseFloat(selectCliente.getAttribute('clienteDescuento')) / 100;
+    var clienteDescuento = parseInt(selectCliente.getAttribute('clienteDescuento'));
     var selectProducto = document.getElementById('producto-input').selectedOptions[0];
     var disponibleParaDescuento = parseInt(selectProducto.getAttribute('data-disponible'));
+    var precioDesc = parseFloat(selectProducto.getAttribute('data-precio-desc')); // Asumimos que has añadido un atributo data-precio-desc en tu HTML
 
-    if (selectCliente.value && disponibleParaDescuento === 1) {
-        precioInput = precioInput - (precioInput * clienteDescuento);
+
+    if (clienteDescuento==1 && disponibleParaDescuento == 1) { 
+        console.log("si")
+        precioInput = precioDesc; 
     }
 
     var tabla = document.getElementById('nota-venta-body');
