@@ -1155,46 +1155,51 @@ def Ingresos():
     if fechainicio > fechafinal:
         fechainicio, fechafinal = fechafinal, fechainicio
 
-    # Consulta para obtener la suma de Entregado y EntregadoTransferenciaTarjeta
+    # Ajuste de horario de caja: apertura a las 7:00 a. m. y cierre a las 4:00 a. m.
+    fechainicio = f"{fechainicio} 07:00:00"
+    fechafinal = f"{fechafinal} 04:00:00"
+
     entregado_query = '''
         SELECT 
-            (SELECT COALESCE(SUM(Entregado), 0) FROM ordenes_cat WHERE StatusPagada = 1 {}) +
-            (SELECT COALESCE(SUM(Entregado), 0) FROM clientes_credito_det WHERE StatusPagada = 1 {}) AS TotalEntregado
+            (SELECT COALESCE(SUM(Entregado), 0) 
+             FROM ordenes_cat 
+             WHERE StatusPagada = 1 
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) +
+            (SELECT COALESCE(SUM(Entregado), 0) 
+             FROM clientes_credito_det 
+             WHERE StatusPagada = 1 
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) 
+            AS TotalEntregado
     '''
     transfer_query = '''
         SELECT 
-            (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) FROM ordenes_cat WHERE StatusPagada = 1 {}) +
-            (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) FROM clientes_credito_det WHERE StatusPagada = 1 {}) AS TotalTransfer
+            (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) 
+             FROM ordenes_cat 
+             WHERE StatusPagada = 1 
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) +
+            (SELECT COALESCE(SUM(EntregadoTransferenciaTarjeta), 0) 
+             FROM clientes_credito_det 
+             WHERE StatusPagada = 1 
+             AND FechaHoraRegistro BETWEEN %s AND DATE_ADD(%s, INTERVAL 1 DAY)) 
+            AS TotalTransfer
     '''
 
-    conditions = []
-    params = []
-
-    if fechainicio and not fechafinal:
-        conditions.append("AND DATE(FechaHoraRegistro) >= %s")
-        params.append(fechainicio)
-    elif not fechainicio and fechafinal:
-        conditions.append("AND DATE(FechaHoraRegistro) <= %s")
-        params.append(fechafinal)
-    elif fechainicio and fechafinal:
-        conditions.append("AND DATE(FechaHoraRegistro) BETWEEN %s AND %s")
-        params.extend([fechainicio, fechafinal])
-
-    condition_str = " ".join(conditions)
-
     # Ejecutar la consulta para la suma de Entregado
-    cur.execute(entregado_query.format(condition_str, condition_str), tuple(params * 2))
+    cur.execute(entregado_query, (fechainicio, fechainicio, fechainicio, fechainicio))
     result_entregado = cur.fetchone()
     total_entregado = result_entregado[0] if result_entregado else 0.0
 
     # Ejecutar la consulta para la suma de EntregadoTransferenciaTarjeta
-    cur.execute(transfer_query.format(condition_str, condition_str), tuple(params * 2))
+    cur.execute(transfer_query, (fechainicio, fechainicio, fechainicio, fechainicio))
     result_transfer = cur.fetchone()
     total_transfer = result_transfer[0] if result_transfer else 0.0
 
     cur.close()
-    return render_template('IngresosAdmin.html', total_entregado=total_entregado, total_transfer=total_transfer)
-
+    return render_template('IngresosAdmin.html', 
+                           total_entregado=total_entregado, 
+                           total_transfer=total_transfer,
+                           fecha_inicio=fechainicio.split()[0],
+                           fecha_final=fechafinal.split()[0])
 
 
 
