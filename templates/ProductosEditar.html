@@ -115,20 +115,28 @@
                 <input type="text" class="form-control" id="Abreviatura" name="Abreviatura" placeholder="ejemplo: Victoria Mega,Sabritas" value="{{ data[0][2] }}" required>
             </div>
             <div class="form-group">
-                <label for="Precio">Precio</label>
-                <input type="number" step="0.01" class="form-control" id="Precio" name="Precio" placeholder="ejemplo: 550" value="{{ data[0][3] }}" required>
+                <label for="Precio">Precio Venta</label>
+                <input type="number" step="0.01" class="form-control" id="Precio" name="Precio" placeholder="ejemplo: 550" value="{{ data[0][3] }} required>
+            </div>
+            <div class="form-group">
+                <label for="Precio">Precio Compra</label>
+                <input type="number" step="0.01" class="form-control" id="CostoVenta" name="CostoVenta" placeholder="ejemplo: 550" value="{{ data[0][4] }} required>
+            </div>
+            <div>
+                <h2></h2>
+                <h2></h2>
             </div>
             <div class="form-group">
                 <label for="DisponibleParaDescuento">Elegible para descuento</label>
                 <input type="checkbox" id="DisponibleParaDescuento" 
-                       {% if data[0][5] == 1 %} checked {% endif %} 
+                       {% if data[0][6] == 1 %} checked {% endif %} 
                        onchange="document.getElementById('HiddenDisponibleParaDescuento').value = this.checked ? 1 : 0">
                 <input type="hidden" id="HiddenDisponibleParaDescuento" name="DisponibleParaDescuento" value="0"> <!-- Campo oculto -->
             </div>
              <h2></h2>
             <div class="form-group">
                 <label for="Precio">Precio Para Descuento</label>
-                <input type="number" step="0.01" class="form-control" id="PrecioDesc" name="PrecioDesc" placeholder="ejemplo: 550">
+                <input type="number" step="0.01" class="form-control" id="PrecioDesc" name="PrecioDesc" placeholder="ejemplo: 550 value="{{ data[0][10] }}">
             </div>
             <div class="form-group">
                 <label for="CantidadStock">Cantidad (Stock)</label>
