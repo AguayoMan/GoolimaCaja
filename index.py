@@ -558,7 +558,7 @@ def Venta():
     cur = mysql.connection.cursor()
     cur.execute('SELECT NombreCliente, Descuento FROM clientes_cat WHERE Eliminado = 0;')
     data = cur.fetchall()
-    cur2.execute('SELECT NombreProducto, Abreviatura, Precio,DisponibleParaDescuento FROM productos_cat WHERE Eliminado = 0;')
+    cur2.execute('SELECT NombreProducto, Abreviatura, Precio,DisponibleParaDescuento,PrecioDesc FROM productos_cat WHERE Eliminado = 0;')
     producto=cur2.fetchall()
 
     return render_template('VentaAdmin.html',producto=producto,data=data)        
