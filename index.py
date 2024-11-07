@@ -1162,58 +1162,67 @@ def Ingresos():
     if fechainicio > fechafinal:
         fechainicio, fechafinal = fechafinal, fechainicio
 
-    # Definir el inicio y fin del corte considerando el horario de la caja
-    fechainicio = f"{fechainicio} 07:00:00"  # Comienza a las 07:00 del día inicial
-    fechafinal_dt = datetime.strptime(fechafinal, "%Y-%m-%d") + timedelta(days=1)  # Día siguiente
-    fechafinal = fechafinal_dt.strftime("%Y-%m-%d 04:00:00")  # Termina a las 04:00 del día siguiente
+    # Convertir fechas a datetime para iterar día a día
+    fechainicio_dt = datetime.strptime(fechainicio, "%Y-%m-%d")
+    fechafinal_dt = datetime.strptime(fechafinal, "%Y-%m-%d")
 
-    # Consultas de ingreso total con las fechas ajustadas
-    entregado_query = '''
-        SELECT OrdenId, Entregado 
-        FROM ordenes_cat 
-        WHERE StatusPagada = 1 
-        AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
-    '''
-    credito_entregado_query = '''
-        SELECT DeudaId, Entregado 
-        FROM clientes_credito_det 
-        WHERE StatusPagada = 1 
-        AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
-    '''
-    transfer_query = '''
-        SELECT OrdenId, EntregadoTransferenciaTarjeta 
-        FROM ordenes_cat 
-        WHERE StatusPagada = 1 
-        AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
-    '''
-    credito_transfer_query = '''
-        SELECT DeudaId, EntregadoTransferenciaTarjeta 
-        FROM clientes_credito_det 
-        WHERE StatusPagada = 1 
-        AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
-    '''
+    total_entregado = 0
+    total_transfer = 0
+    ordenes_entregado = []
+    ordenes_transfer = []
 
-    # Ejecutar la consulta para la suma de Entregado y obtener IDs
-    cur.execute(entregado_query, (fechainicio, fechafinal))
-    ordenes_entregado_cat = cur.fetchall()
+    # Iterar sobre cada día en el rango
+    while fechainicio_dt <= fechafinal_dt:
+        # Rango de 07:00 AM del día actual a 04:00 AM del día siguiente
+        dia_inicio = fechainicio_dt.strftime("%Y-%m-%d 07:00:00")
+        dia_fin = (fechainicio_dt + timedelta(days=1)).strftime("%Y-%m-%d 04:00:00")
 
-    cur.execute(credito_entregado_query, (fechainicio, fechafinal))
-    ordenes_entregado_credito = cur.fetchall()
+        # Consultas de ingreso total para el rango del día
+        entregado_query = '''
+            SELECT OrdenId, Entregado 
+            FROM ordenes_cat 
+            WHERE StatusPagada = 1 
+            AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
+        '''
+        credito_entregado_query = '''
+            SELECT DeudaId, Entregado 
+            FROM clientes_credito_det 
+            WHERE StatusPagada = 1 
+            AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
+        '''
+        transfer_query = '''
+            SELECT OrdenId, EntregadoTransferenciaTarjeta 
+            FROM ordenes_cat 
+            WHERE StatusPagada = 1 
+            AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
+        '''
+        credito_transfer_query = '''
+            SELECT DeudaId, EntregadoTransferenciaTarjeta 
+            FROM clientes_credito_det 
+            WHERE StatusPagada = 1 
+            AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
+        '''
 
-    # Calcular total de entregado sumando ambas consultas y obteniendo IDs
-    total_entregado = sum(row[1] for row in ordenes_entregado_cat + ordenes_entregado_credito)
-    ordenes_entregado = [row[0] for row in ordenes_entregado_cat + ordenes_entregado_credito]
+        # Ejecutar y acumular resultados para entregado
+        cur.execute(entregado_query, (dia_inicio, dia_fin))
+        ordenes_entregado_cat = cur.fetchall()
+        cur.execute(credito_entregado_query, (dia_inicio, dia_fin))
+        ordenes_entregado_credito = cur.fetchall()
+        
+        total_entregado += sum(row[1] for row in ordenes_entregado_cat + ordenes_entregado_credito)
+        ordenes_entregado += [row[0] for row in ordenes_entregado_cat + ordenes_entregado_credito]
 
-    # Ejecutar la consulta para la suma de EntregadoTransferenciaTarjeta y obtener IDs
-    cur.execute(transfer_query, (fechainicio, fechafinal))
-    ordenes_transfer_cat = cur.fetchall()
+        # Ejecutar y acumular resultados para transferencia
+        cur.execute(transfer_query, (dia_inicio, dia_fin))
+        ordenes_transfer_cat = cur.fetchall()
+        cur.execute(credito_transfer_query, (dia_inicio, dia_fin))
+        ordenes_transfer_credito = cur.fetchall()
+        
+        total_transfer += sum(row[1] for row in ordenes_transfer_cat + ordenes_transfer_credito)
+        ordenes_transfer += [row[0] for row in ordenes_transfer_cat + ordenes_transfer_credito]
 
-    cur.execute(credito_transfer_query, (fechainicio, fechafinal))
-    ordenes_transfer_credito = cur.fetchall()
-
-    # Calcular total de transferencias sumando ambas consultas y obteniendo IDs
-    total_transfer = sum(row[1] for row in ordenes_transfer_cat + ordenes_transfer_credito)
-    ordenes_transfer = [row[0] for row in ordenes_transfer_cat + ordenes_transfer_credito]
+        # Avanzar al siguiente día
+        fechainicio_dt += timedelta(days=1)
 
     # Imprimir en consola los IDs de las órdenes incluidas en cada suma
     print("Órdenes incluidas en la suma de Entregado (ordenes_cat y clientes_credito_det):", ordenes_entregado)
@@ -1223,8 +1232,9 @@ def Ingresos():
     return render_template('IngresosAdmin.html', 
                            total_entregado=total_entregado, 
                            total_transfer=total_transfer,
-                           fecha_inicio=fechainicio.split()[0],
-                           fecha_final=fechafinal_dt.strftime("%Y-%m-%d"))
+                           fecha_inicio=fechainicio,
+                           fecha_final=fechafinal)
+
 
 
 
