@@ -158,6 +158,10 @@
             </tr>
         </tbody>
     </table>
+        <!-- Botón para imprimir -->
+    <div class="form-group">
+        <button type="button" class="btn btn-primary" onclick="imprimirCuenta()">Imprimir Ingresos</button>
+    </div>
 </div>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
@@ -180,6 +184,88 @@
         }
     });
 </script>
+<script>
+    function imprimirCuenta() { 
+    let ticketHTML = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ingresos</title> 
+        <style>
+            body {
+                width: 76mm;
+                margin: 0 auto;
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+                text-align: center;
+            }
+            h2 {
+                margin: 0;
+            }
+            p {
+                margin: 5px 0;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 10px 0;
+            }
+            th, td {
+                border-bottom: 1px solid #000;
+                padding: 5px 0;
+                text-align: center;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+        </style>
+    </head>
+    <body>
+        <img src="/static/imagenes/goolima logo negro.png" alt="Logo Goolima" style="width:100px; height:auto;">
+        <h2><strong>Goolima</strong></h2>
+        <p>Amado Nervo 635, La Armonía, 28020 Colima, Col.</p>
+        <p>312 201 0216</p>
+        <h2>Corte del día</h2>
 
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo de Pago</th>
+                    <th>Fecha Inicial</th>
+                    <th>Fecha Final</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Efectivo</td>
+                    <td>{{ fecha_inicio }}</td>
+                    <td>{{ fecha_final }}</td>
+                    <td>$ {{ total_entregado | default(0) }}</td>
+                </tr>
+                <tr>
+                    <td>Tarjeta/Transferencia</td>
+                    <td>{{ fecha_inicio }}</td>
+                    <td>{{ fecha_final }}</td>
+                    <td>$ {{ total_transfer | default(0) }}</td>
+                </tr>
+                <tr class="table-success">
+                    <td colspan="3" class="text-end font-weight-bold">Total</td>
+                    <td>$ {{ total_entregado | default(0) + total_transfer | default(0) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+    </html>`;
+
+    const ventana = window.open('', '_blank');
+    ventana.document.write(ticketHTML);
+    ventana.document.close();
+    ventana.print();
+}
+
+</script>
 
 </html>
