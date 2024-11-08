@@ -981,13 +981,24 @@ def procesar_cobro_Deuda():
     transferencia_tarjeta_recibido = float(data.get('transferenciaTarjetaRecibido', 0))
     cambio = float(data.get('cambio', 0))
     suma = efectivo_recibido + transferencia_tarjeta_recibido
-
+    curC = mysql.connection.cursor()
+    query = """
+    SELECT ClienteId
+    FROM clientes_credito_det  -- Especifica la tabla correcta
+    WHERE DeudaId = %s 
+    """
+    curC.execute(query, (orden_id,))  # Usamos `orden_id` que coincide con la ruta
+    cliente_id = curC.fetchone()
+    cliente_id = cliente_id[0]
     print(f"Orden ID: {orden_id}")
     print(f"Total a pagar: {total_a_pagar}")
     print(f"Efectivo recibido: {efectivo_recibido}")
     print(f"Transferencia/Tarjeta recibida: {transferencia_tarjeta_recibido}")
     
     try:
+        cur = mysql.connection.cursor()
+        cur.execute('INSERT INTO abonos_det (ClienteId, Entregado, EntregadoTransferenciaTarjeta, StatusPagada) VALUES (%s, %s,%s, 1)', (cliente_id, efectivo_recibido, transferencia_tarjeta_recibido))
+
         cur = mysql.connection.cursor()
         
         if total_a_pagar <= suma:
@@ -1185,8 +1196,8 @@ def Ingresos():
             AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
         '''
         credito_entregado_query = '''
-            SELECT DeudaId, Entregado 
-            FROM clientes_credito_det 
+            SELECT AbonoId, Entregado 
+            FROM abonos_det 
             WHERE StatusPagada = 1 
             AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
         '''
@@ -1197,8 +1208,8 @@ def Ingresos():
             AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
         '''
         credito_transfer_query = '''
-            SELECT DeudaId, EntregadoTransferenciaTarjeta 
-            FROM clientes_credito_det 
+            SELECT AbonoId, EntregadoTransferenciaTarjeta 
+            FROM abonos_det 
             WHERE StatusPagada = 1 
             AND FechaHoraRegistro >= %s AND FechaHoraRegistro <= %s
         '''
